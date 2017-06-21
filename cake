@@ -167,7 +167,7 @@ parse() {
   local cakefile="$1"
 
   ca_subject=''
-  key_size=1024
+  key_size=4096
   domain=''
   alternates=''
 
