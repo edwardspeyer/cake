@@ -15,14 +15,14 @@ Options:
 Step 1: make a directory with a Cakefile:
 
   # cat Cakefile
-  keysize 1024
+  size 1024
   subject /CN=Cake Example Certificate Authority
 
   domain www.example.com
-    keysize 2048
+    size 2048
 
   domain mail.example.com
-    keysize 1024
+    size 1024
     alt imap.example.com
     alt smtp.example.com
 
@@ -175,11 +175,11 @@ parse() {
     while read command args
     do
       case "$command" in
-        keysize)
-          keysize="$args"
-          if ! echo $keysize | egrep -q '(1024|2048|4096)'
+        size)
+          key_size="$args"
+          if ! echo $key_size | egrep -q '(1024|2048|4096)'
           then
-            fatal "weird key size: $keysize"
+            fatal "weird key size: $key_size"
           fi
           ;;
 
@@ -190,7 +190,7 @@ parse() {
         domain)
           if [ "$domain" ]
           then
-            build_domain $domain $keysize "$alternates"
+            build_domain $domain $key_size "$alternates"
           fi
           domain="$args"
           ;;
@@ -207,7 +207,7 @@ parse() {
 
     if [ "$domain" ]
     then
-      build_domain $domain $keysize "$alternates"
+      build_domain $domain $key_size "$alternates"
     fi
   }
 }
@@ -263,7 +263,7 @@ build_ca() {
 
 build_domain() {
   local domain=$1
-  local keysize=$2
+  local key_size=$2
   local alternates="$3"
 
   prune_pair $domain
@@ -282,7 +282,7 @@ build_domain() {
     log "new key for $domain"
     (
       cd $TMP
-      openssl genrsa -out $domain.key.pem $keysize
+      openssl genrsa -out $domain.key.pem $key_size
       chmod 0600 $domain.key.pem
     )
     cp $TMP/$domain.key.pem .
@@ -310,7 +310,6 @@ build_domain() {
       yes | openssl ca          \
         -config openssl.cnf     \
         -extensions server_cert \
-        -days 3750              \
         -notext                 \
         -md sha256              \
         -in $domain.csr.pem     \
@@ -335,7 +334,7 @@ certificate       = ca.cert.pem
 default_md        = sha256
 name_opt          = ca_default
 cert_opt          = ca_default
-default_days      = 3750
+default_days      = 3650
 preserve          = no
 policy            = policy_loose
 
