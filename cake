@@ -167,6 +167,7 @@ build_domain() {
       # TODO do I really want -notext?
       yes | openssl ca          \
         -config openssl.cnf     \
+        -extensions server_cert \
         -days 3750              \
         -notext                 \
         -md sha256              \
