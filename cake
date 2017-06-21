@@ -39,6 +39,7 @@ main() {
     if [ -f "$candidate" ]
     then
       CONFIG="$BASE/$candidate"
+      prune
       build
       exit
     fi
@@ -54,6 +55,21 @@ usage() {
 
 log() {
   echo -e >&2 "\033[4m$(basename "$0"): $*\033[0m"
+}
+
+prune() {
+  for_each_domain prune_domain
+}
+
+prune_domain() {
+  local domain=$1
+  for file in $domain.key.pem $domain.cert.pem
+  do
+    if [ $file -ot ca.cert.pem ] || [ $file -ot ca.key.pem ]
+    then
+      rm $file
+    fi
+  done
 }
 
 build() {
