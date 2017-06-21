@@ -270,7 +270,7 @@ parse() {
     local state="$1"
     cur_alternates=''
     cur_cn=''
-    cur_email=''
+    cur_email="$global_email"
     cur_key_size=$global_key_size
     cur_state="$state"
   }
