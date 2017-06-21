@@ -305,8 +305,6 @@ build_domain() {
         -sha256                 \
         -out $domain.csr.pem
 
-      # TODO can I put -days in the config?
-      # TODO do I really want -notext?
       yes | openssl ca          \
         -config openssl.cnf     \
         -extensions server_cert \
