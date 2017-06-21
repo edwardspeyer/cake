@@ -1,4 +1,4 @@
-# cake
+# cake 🍰
 
 Write a _Cakefile_ describing your CA and the certificates you need, then build everything with _cake_:
 
