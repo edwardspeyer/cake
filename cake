@@ -2,9 +2,6 @@
 #
 # cake: creating a certificate authority is a piece of cake!
 #
-# https://jamielinux.com/docs/openssl-certificate-authority/
-# https://security.stackexchange.com/questions/74345/
-#
 
 HELP="\
 usage: cake [options]

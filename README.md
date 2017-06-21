@@ -58,3 +58,17 @@ www.cake.com.key.pem
 * Maybe it should support user certificates?
 * Full support for using weak 1024 bit keys though
 * Not hard to use: it's piece of cake!
+
+
+# Acknowledgments
+
+* Jamie Nguyen's [excellent documentation][JL] on how to do this properly, by hand.
+* Debian Administration's [guide][DA] to using Eric Young and Tim Hudson's
+  original scripts (1996!) that ship with OpenSSL.  If it ain't broke, rewrite
+  it.
+* Stack Excchange [answer][SE] on passing subjectAltName as an environment
+  variable, instead of hard-coding in the config file.
+
+[JL]: https://jamielinux.com/docs/openssl-certificate-authority/
+[SE]: https://security.stackexchange.com/questions/74345/
+[DA]: https://debian-administration.org/article/618/Certificate_Authority_CA_with_OpenSSL
