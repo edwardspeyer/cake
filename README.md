@@ -5,9 +5,8 @@ Write a _Cakefile_ describing your CA and the certificates you need, then build 
 ```
 £ ls
 Cakefile
-```
 
-```
+
 £ cat Cakefile
 ca Cake Corporation Internal CA
   email root@cake.com
@@ -20,9 +19,8 @@ domain mail.example.com
   email postmaster@cake.com
   alt imap.cake.com
   alt smtp.cake.com
-```
 
-```
+
 £ cake
 🍰  new CA key
 Generating RSA private key, 4096 bit long modulus
@@ -35,9 +33,8 @@ Generating RSA private key, 4096 bit long modulus
 🍰  new key for mail.cake.com
 🍰  new cert for mail.cake.com
 🍰  all up to date!
-```
 
-```
+
 £ ls
 Cakefile
 ca.cert.pem
