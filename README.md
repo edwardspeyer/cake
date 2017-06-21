@@ -4,14 +4,12 @@ Write a _Cakefile_ describing your CA and the certificates you need, then build 
 
 ```
 $ cat Cakefile
-size 1024
-
 ca Cake Corporation Internal CA
   email root@cake.com
 
 domain www.cake.com
   email webmaster@cake.com
-  size 4096
+  size 1024
 
 domain mail.example.com
   email postmaster@cake.com
@@ -22,8 +20,7 @@ domain mail.example.com
 ```
 $ cake
 🍰  new CA key
-Generating RSA private key, 1024 bit long modulus
-......++++++
+Generating RSA private key, 4096 bit long modulus
 [...]
 🍰  summary:
 🍰  new CA key
