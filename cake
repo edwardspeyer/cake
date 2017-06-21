@@ -1,11 +1,12 @@
 #!/bin/bash
 #
-# https://jamielinux.com/docs/openssl-certificate-authority/sign-server-and-client-certificates.html
+# cake: creating a certificate authority is a piece of cake!
+#
+# https://jamielinux.com/docs/openssl-certificate-authority/
 # https://security.stackexchange.com/questions/74345/
 #
 
 KEY_SIZE=4096
-PASSARG='pass:""'
 
 log() {
   echo -e >&2 "\033[4m$(basename "$0"): $*\033[0m"
@@ -122,8 +123,6 @@ else
   (
     cd $tmp
     openssl genrsa \
-      -aes256 \
-      -passout $PASSARG \
       -out ca.key.pem $KEY_SIZE
     chmod 400 ca.key.pem
   )
@@ -138,7 +137,6 @@ else
   (
     cd $tmp
     openssl req -config openssl.cnf \
-      -passin $PASSARG \
       -key ca.key.pem \
       -new -x509 \
       -days 7300 \
@@ -171,8 +169,6 @@ tail -n +2 "$config" \
       (
         cd $tmp
         openssl genrsa \
-          -aes256 \
-          -passout $PASSARG \
           -out $domain.key.pem $KEY_SIZE
         chmod 0400 $domain.key.pem
       )
@@ -188,7 +184,6 @@ tail -n +2 "$config" \
       (
         cd $tmp
         openssl req -config openssl.cnf \
-          -passin $PASSARG \
           -key $domain.key.pem \
           -extensions server_cert \
           -subj "/CN=$domain" \
@@ -199,7 +194,6 @@ tail -n +2 "$config" \
           -days 3750 \
           -notext \
           -md sha256 \
-          -passin $PASSARG \
           -in $domain.csr.pem \
           -out $domain.cert.pem
       )
