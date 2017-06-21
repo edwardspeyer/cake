@@ -90,7 +90,7 @@ for_each_domain() {
       subject_alt_name="DNS:$domain"
       for alternate in $alternates
       do
-        subject_alt_name="${subject_alt_name},DNS:$alt"
+        subject_alt_name="${subject_alt_name},DNS:$alternate"
       done
 
       "$1" $domain $subject_alt_name
