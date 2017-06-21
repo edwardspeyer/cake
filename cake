@@ -268,21 +268,27 @@ parse() {
   local cakefile="$1"
 
   local global_key_size=4096
+  local global_email=''
 
   # Set the current state, and reset all other cursors to their global values.
   state() {
-    cur_state="$1"
-    cur_ca_subject=''
-    cur_key_size=$global_key_size
-    cur_domain=''
+    local state="$1"
     cur_alternates=''
+    cur_cn=''
+    cur_email=''
+    cur_key_size=$global_key_size
+    cur_state="$state"
   }
 
   # Use the cursors based on whatever the current state is.
   commit() {
     case $cur_state in
       globals)
-        log "committing GLOBALS"
+        if [ "$cur_email" ]
+        then
+          global_email="$cur_email"
+        fi
+
         if [ "$cur_key_size" ]
         then
           global_key_size=$cur_key_size
@@ -290,11 +296,11 @@ parse() {
         ;;
 
       ca_state)
-        build_ca "$cur_ca_subject" "$cur_key_size"
+        build_ca "$cur_cn" "$cur_email" "$cur_key_size"
         ;;
 
       domain_state)
-        build_domain "$cur_domain" "$cur_key_size" "$cur_alternates"
+        build_domain "$cur_cn" "$cur_email" "$cur_key_size" "$cur_alternates"
         ;;
     esac
   }
@@ -309,6 +315,12 @@ parse() {
     while read command args
     do
       case "$command" in
+        ca)
+          commit
+          state 'ca_state'
+          cur_cn="$args"
+          ;;
+
         size)
           cur_key_size="$args"
           if ! echo $cur_key_size | egrep -q '(1024|2048|4096)'
@@ -317,16 +329,14 @@ parse() {
           fi
           ;;
 
-        ca)
-          commit
-          state 'ca_state'
-          cur_ca_subject="$args"
+        email)
+          cur_email="$args"
           ;;
 
         domain)
           commit
           state 'domain_state'
-          cur_domain="$args"
+          cur_cn="$args"
           ;;
 
         alt)
@@ -347,9 +357,27 @@ strip() {
   sed -e 's/ *#.*$//' $1 | grep -v '^$'
 }
 
+subject() {
+  local cn="$1"
+  local email="$2"
+
+  if [ -z "$cn" ]
+  then
+    fatal "subject CN can't be empty"
+  fi
+
+  if [ "$email" ]
+  then
+    echo "/emailAddress=$email/CN=$cn"
+  else
+    echo "/CN=$cn"
+  fi
+}
+
 build_ca() {
-  local ca_subject="$1"
-  local key_size="$2"
+  local cn="$1"
+  local email="$2"
+  local key_size="$3"
 
   prune_cert ca
 
@@ -373,6 +401,7 @@ build_ca() {
     log "new CA cert"
     (
       cd $TMP
+      subject=$(subject "$cn" "$email")
       openssl req               \
         -config main.config     \
         -key ca.key.pem         \
@@ -381,7 +410,7 @@ build_ca() {
         -days 7300              \
         -sha256                 \
         -extensions v3_ca       \
-        -subj "$ca_subject"     \
+        -subj "$subject"        \
         -out ca.cert.pem
     )
     cp $TMP/ca.cert.pem .
@@ -389,9 +418,10 @@ build_ca() {
 }
 
 build_domain() {
-  local domain=$1
-  local key_size=$2
-  local alternates="$3"
+  local domain="$1"
+  local email="$2"
+  local key_size="$3"
+  local alternates="$4"
 
   prune_cert $domain
   prune_name $domain
@@ -424,11 +454,12 @@ build_domain() {
       cd $TMP
       export subject_alt_name
 
+      subject=$(subject $domain "$email")
       openssl req               \
         -config domain.config   \
         -key $domain.key.pem    \
         -extensions server_cert \
-        -subj "/CN=$domain"     \
+        -subj "$subject"        \
         -new                    \
         -sha256                 \
         -out $domain.csr.pem
