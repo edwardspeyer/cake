@@ -137,7 +137,7 @@ main() {
     echo "$OPENSSL_CNF_MAIN"    > main.config
     echo "$OPENSSL_CNF_DOMAIN"  > domain.config
   )
-  
+
   for candidate in "$1" cakefile Cakefile
   do
     if [ -f "$candidate" ]
@@ -267,37 +267,70 @@ prune_name() {
 parse() {
   local cakefile="$1"
 
-  ca_subject=''
-  key_size=4096
-  domain=''
-  alternates=''
+  local global_key_size=4096
+
+  # Set the current state, and reset all other cursors to their global values.
+  state() {
+    cur_state="$1"
+    cur_ca_subject=''
+    cur_key_size=$global_key_size
+    cur_domain=''
+    cur_alternates=''
+  }
+
+  # Use the cursors based on whatever the current state is.
+  commit() {
+    case $cur_state in
+      globals)
+        log "committing GLOBALS"
+        if [ "$cur_key_size" ]
+        then
+          global_key_size=$cur_key_size
+        fi
+        ;;
+
+      ca_state)
+        build_ca "$cur_ca_subject" "$cur_key_size"
+        ;;
+
+      domain_state)
+        build_domain "$cur_domain" "$cur_key_size" "$cur_alternates"
+        ;;
+    esac
+  }
+
+  # Begin in the "globals" state.
+  #
+  # Each "ca", "domain" etc. (or EOF) causes the previous state to be committed
+  # and the state to be reset.
+  state 'globals'
 
   strip "$cakefile" | {
     while read command args
     do
       case "$command" in
         size)
-          key_size="$args"
-          if ! echo $key_size | egrep -q '(1024|2048|4096)'
+          cur_key_size="$args"
+          if ! echo $cur_key_size | egrep -q '(1024|2048|4096)'
           then
-            fatal "weird key size: $key_size"
+            fatal "weird key size: $cur_key_size"
           fi
           ;;
 
         ca)
-          build_ca "$args" "$key_size"
+          commit
+          state 'ca_state'
+          cur_ca_subject="$args"
           ;;
 
         domain)
-          if [ "$domain" ]
-          then
-            build_domain $domain $key_size "$alternates"
-          fi
-          domain="$args"
+          commit
+          state 'domain_state'
+          cur_domain="$args"
           ;;
 
         alt)
-          alternates="$alternates $args"
+          cur_alternates="$cur_alternates $args"
           ;;
 
         *)
@@ -306,10 +339,7 @@ parse() {
       esac
     done
 
-    if [ "$domain" ]
-    then
-      build_domain $domain $key_size "$alternates"
-    fi
+    commit
   }
 }
 
@@ -317,14 +347,10 @@ strip() {
   sed -e 's/ *#.*$//' $1 | grep -v '^$'
 }
 
-ca_subject() {
-  stripped_config | head -1
-}
-
 build_ca() {
   local ca_subject="$1"
   local key_size="$2"
-  
+
   prune_cert ca
 
   if [ -f ca.key.pem ]
