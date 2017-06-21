@@ -56,70 +56,64 @@ Warnings:
 
 "
 
+#
+# OpenSSL config file, where most options live.
+#
 OPENSSL_CNF_MAIN="
 [ ca ]
 default_ca = ca_CAKE
 
 [ ca_CAKE ]
-dir               = .
-new_certs_dir     = .
-database          = index.txt
-serial            = serial
-private_key       = ca.key.pem
-certificate       = ca.cert.pem
-default_md        = sha256
-name_opt          = ca_default
-cert_opt          = ca_default
-default_days      = 3650
-preserve          = no
-policy            = policy_loose
+dir           = .
+new_certs_dir = .
+database      = index.txt
+serial        = serial
+private_key   = ca.key.pem
+certificate   = ca.cert.pem
+default_md    = sha256
+name_opt      = ca_default
+cert_opt      = ca_default
+default_days  = 3650
+preserve      = no
+policy        = policy_loose
 
 [ policy_loose ]
-countryName             = optional
-stateOrProvinceName     = optional
-localityName            = optional
-organizationName        = optional
-organizationalUnitName  = optional
-commonName              = supplied
-emailAddress            = optional
+commonName    = supplied
+# TODO make this supplied
+emailAddress  = optional
 
 [ req ]
-distinguished_name  = req_distinguished_name
+distinguished_name  = blank_distinguished_name
 string_mask         = utf8only
 default_md          = sha256
 x509_extensions     = v3_ca
 
-[ req_distinguished_name ]
-countryName                     = UK
-stateOrProvinceName             = State or Province Name
-localityName                    = Locality Name
-0.organizationName              = Organization Name
-organizationalUnitName          = Organizational Unit Name
-commonName                      = Common Name
-emailAddress                    = Email Address
+[ blank_distinguished_name ]
+# With the use of -subj on the command line, I don't believe this is ever
+# consulted, so we leave it blank.
 
 [ v3_ca ]
-subjectKeyIdentifier = hash
-authorityKeyIdentifier = keyid:always,issuer
-basicConstraints = critical, CA:true
-keyUsage = critical, digitalSignature, cRLSign, keyCertSign
+subjectKeyIdentifier    = hash
+authorityKeyIdentifier  = keyid:always,issuer
+basicConstraints        = critical, CA:true
+keyUsage                = critical, digitalSignature, cRLSign, keyCertSign
 "
 
 OPENSSL_CNF_DOMAIN="
 $OPENSSL_CNF_MAIN
 
 [ server_cert ]
-basicConstraints = CA:FALSE
-nsCertType = server
-nsComment = 'OpenSSL Generated Server Certificate'
-subjectKeyIdentifier = hash
-authorityKeyIdentifier = keyid,issuer:always
-keyUsage = critical, digitalSignature, keyEncipherment
-extendedKeyUsage = serverAuth
-subjectAltName = \${ENV::subject_alt_name}
+basicConstraints        = CA:FALSE
+nsCertType              = server
+nsComment               = 'OpenSSL Generated Server Certificate'
+subjectKeyIdentifier    = hash
+authorityKeyIdentifier  = keyid,issuer:always
+keyUsage                = critical, digitalSignature, keyEncipherment
+extendedKeyUsage        = serverAuth
+subjectAltName          = \${ENV::subject_alt_name}
 "
 
-
+IS_TTY=''
 if [ -t 1 ]
 then
   IS_TTY=1
