@@ -1,6 +1,6 @@
 # cake
 
-Write a _Cakefile_:
+Write a _Cakefile_ describing your CA and the certificates you need, then run /cake/:
 
 ```
 $ cat Cakefile
@@ -19,9 +19,6 @@ domain mail.example.com
   alt smtp.cake.com
 ```
 
-
-Run _cake_:
-
 ```
 $ cake
 🍰  new CA key
@@ -37,9 +34,6 @@ Generating RSA private key, 1024 bit long modulus
 🍰  new cert for mail.cake.com
 🍰  all up to date!
 ```
-
-
-Behold _files_:
 
 ```
 $ ls
