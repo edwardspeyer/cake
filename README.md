@@ -42,3 +42,14 @@ mail.cake.com.key.pem
 www.cake.com.cert.pem
 www.cake.com.key.pem
 ```
+
+# Warnings / boasts
+
+* Generated keys don't bother with passphrases
+* Only use cake on hardware you trust, I guess?
+* Lots of output from _openssl_ passed directly to you, unedited
+* No support for anything other than _CN=[fqdn]_ with _DNS:..._ subjectAltNames!
+* But who uses anything else?!
+* Maybe it should support user certificates?
+* Full support for using weak 1024 bit keys though
+* Not hard to use: it's piece of cake!
