@@ -112,6 +112,7 @@ subjectKeyIdentifier    = hash
 authorityKeyIdentifier  = keyid,issuer:always
 keyUsage                = critical, digitalSignature, keyEncipherment
 extendedKeyUsage        = serverAuth
+# See [SANENV] below...
 subjectAltName          = \${ENV::subject_alt_name}
 "
 
@@ -352,10 +353,16 @@ parse() {
   }
 }
 
+#
+# Remove comments and empty lines.
+#
 strip() {
   sed -e 's/ *#.*$//' $1 | grep -v '^$'
 }
 
+#
+# Create an X509(?) subject from a common-name and email-address.
+#
 subject() {
   local cn="$1"
   local email="$2"
@@ -373,6 +380,10 @@ subject() {
   fi
 }
 
+#
+# Build the CA cert, which is just a sort of certificate signing request which
+# isn't signed, I think?
+#
 build_ca() {
   local cn="$1"
   local email="$2"
@@ -416,6 +427,9 @@ build_ca() {
   fi
 }
 
+#
+# Build a key and cert for an FQDN with alternate names.
+#
 build_domain() {
   local domain="$1"
   local email="$2"
@@ -451,6 +465,10 @@ build_domain() {
     log "new cert for $domain"
     (
       cd $TMP
+
+      # OpenSSL can't be passed a subject-alt-name on the command line, and we
+      # can't hard code it into the config file, so we pass it in using the
+      # environment instead. [SANENV]
       export subject_alt_name
 
       subject=$(subject $domain "$email")
