@@ -1,4 +1,4 @@
-# cake 🍰
+# cake 🍰 certificate authority
 
 Write a _Cakefile_ describing your CA and the certificates you need, then build everything with _cake_:
 
@@ -43,7 +43,7 @@ www.cake.com.cert.pem
 www.cake.com.key.pem
 ```
 
-# Warnings / boasts
+# Warnings / Boasts
 
 * Generated keys don't bother with passphrases
 * Only use cake on hardware you trust, I guess?
