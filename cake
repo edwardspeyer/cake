@@ -4,9 +4,7 @@
 #
 
 HELP="\
-usage: cake
-
-Write a Cakefile, then run cake:
+usage: ...just write a Cakefile, then run cake!
 
   £ cat Cakefile
   ca Cake Corporation Internal CA
@@ -17,7 +15,6 @@ Write a Cakefile, then run cake:
     size 1024
 
   domain mail.example.com
-    email postmaster@cake.com
     alt imap.cake.com
     alt smtp.cake.com
 
@@ -26,13 +23,9 @@ Write a Cakefile, then run cake:
   cake: all up to date!
 
   £ ls
-  Cakefile
-  ca.cert.pem
-  ca.key.pem
-  mail.cake.com.cert.pem
-  mail.cake.com.key.pem
-  www.cake.com.cert.pem
-  www.cake.com.key.pem
+  Cakefile               mail.cake.com.cert.pem www.cake.com.key.pem
+  ca.cert.pem            mail.cake.com.key.pem
+  ca.key.pem             www.cake.com.cert.pem
 "
 
 #
