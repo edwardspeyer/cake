@@ -58,15 +58,40 @@ log() {
 }
 
 prune() {
+  prune_pair 'ca'
+  for_each_domain prune_pair
   for_each_domain prune_domain
+}
+
+prune_pair() {
+  local key=$1.key.pem
+  local cert=$1.cert.pem
+
+  if [ $key -nt $cert ]
+  then
+    log "out-of-date cert '$cert' older than key '$key'"
+    rm -f $cert
+  fi
+
+  if [ -f $cert ] && [ ! -f $key ]
+  then
+    log "abandoned cert '$cert'; key '$key' is missing"
+    rm -f $cert
+  fi
 }
 
 prune_domain() {
   local domain=$1
   for file in $domain.key.pem $domain.cert.pem
   do
+    if [ ! -f $file ]
+    then
+      continue
+    fi
+
     if [ $file -ot ca.cert.pem ] || [ $file -ot ca.key.pem ]
     then
+      log "pruning out of date file $file"
       rm $file
     fi
   done
@@ -82,7 +107,6 @@ build() {
     echo 1001 > serial
     echo "$OPENSSL_CNF" > openssl.cnf
   )
-
 
   # TODO can I get away with not doing this?
   export subject_alt_name='n/a'
@@ -118,6 +142,7 @@ build_ca() {
   then
     cp ca.key.pem $CA_TMP
   else
+    log "new CA key"
     (
       cd $CA_TMP
       openssl genrsa -out ca.key.pem $KEY_SIZE
@@ -130,6 +155,7 @@ build_ca() {
   then
     cp ca.cert.pem $CA_TMP
   else
+    log "new CA cert"
     (
       cd $CA_TMP
       openssl req               \
@@ -155,6 +181,7 @@ build_domain() {
   then
     cp $domain.key.pem $CA_TMP/
   else
+    log "new key for $domain"
     (
       cd $CA_TMP
       openssl genrsa -out $domain.key.pem $KEY_SIZE
@@ -167,6 +194,7 @@ build_domain() {
   then
     cp $domain.cert.pem $CA_TMP/
   else
+    log "new cert for $domain"
     (
       cd $CA_TMP
       export subject_alt_name
