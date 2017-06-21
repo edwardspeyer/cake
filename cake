@@ -16,13 +16,16 @@ Step 1: make a directory with a Cakefile:
 
   $ cat Cakefile
   size 1024
-  subject /CN=Cake Example Certificate Authority
+  email root@example.com
+
+  ca /CN=Cake Example Certificate Authority
 
   domain www.example.com
-    size 2048
+    size 4096
+    email webmaster@example.com
 
   domain mail.example.com
-    size 1024
+    email mail...master?@example.com
     alt imap.example.com
     alt smtp.example.com
 
@@ -30,24 +33,20 @@ Step 1: make a directory with a Cakefile:
 Step 2: run cake, get lots of output:
 
   $ cake
-  🍰  new CA key
-  Generating RSA private key, 1024 bit long modulus
-  .++++++
-  ........................++++++
   [MUCH OUTPUT]
-  🍰  summary:
-  🍰  new CA key
-  🍰  new CA cert
-  🍰  new key for www.example.com
-  🍰  new cert for www.example.com
-  🍰  new key for mail.example.com
-  🍰  new cert for mail.example.com
-  🍰  all up to date!
+  cake: summary:
+  cake: new CA key
+  cake: new CA cert
+  cake: new key for www.example.com
+  cake: new cert for www.example.com
+  cake: new key for mail.example.com
+  cake: new cert for mail.example.com
+  cake: all up to date!
 
 
 Warnings:
-  - Generated keys don't bother with passphrases; use cake on hardware you
-    completely trust!
+  - Generated keys don't bother with passphrases!
+  - Only use cake on hardware you trust!
   - Lots of output!
   - No support for anything other than CN=<fqdn> with DNS: subjectAltNames!
   - Who uses anything else?!
