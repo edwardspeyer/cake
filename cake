@@ -102,7 +102,7 @@ keyUsage                = critical, digitalSignature, cRLSign, keyCertSign
 OPENSSL_CNF_DOMAIN="
 $OPENSSL_CNF_MAIN
 
-[ server_cert ]
+[ domain_cert ]
 basicConstraints        = CA:FALSE
 nsCertType              = server
 nsComment               = 'OpenSSL Generated Server Certificate'
@@ -473,7 +473,7 @@ build_domain() {
       openssl req               \
         -config domain.config   \
         -key $domain.key.pem    \
-        -extensions server_cert \
+        -extensions domain_cert \
         -subj "$subject"        \
         -new                    \
         -sha256                 \
@@ -481,7 +481,7 @@ build_domain() {
 
       yes | openssl ca          \
         -config domain.config   \
-        -extensions server_cert \
+        -extensions domain_cert \
         -notext                 \
         -md sha256              \
         -in $domain.csr.pem     \
