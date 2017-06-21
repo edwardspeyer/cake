@@ -56,6 +56,70 @@ Warnings:
 
 "
 
+OPENSSL_CNF_MAIN="
+[ ca ]
+default_ca = ca_CAKE
+
+[ ca_CAKE ]
+dir               = .
+new_certs_dir     = .
+database          = index.txt
+serial            = serial
+private_key       = ca.key.pem
+certificate       = ca.cert.pem
+default_md        = sha256
+name_opt          = ca_default
+cert_opt          = ca_default
+default_days      = 3650
+preserve          = no
+policy            = policy_loose
+
+[ policy_loose ]
+countryName             = optional
+stateOrProvinceName     = optional
+localityName            = optional
+organizationName        = optional
+organizationalUnitName  = optional
+commonName              = supplied
+emailAddress            = optional
+
+[ req ]
+distinguished_name  = req_distinguished_name
+string_mask         = utf8only
+default_md          = sha256
+x509_extensions     = v3_ca
+
+[ req_distinguished_name ]
+countryName                     = UK
+stateOrProvinceName             = State or Province Name
+localityName                    = Locality Name
+0.organizationName              = Organization Name
+organizationalUnitName          = Organizational Unit Name
+commonName                      = Common Name
+emailAddress                    = Email Address
+
+[ v3_ca ]
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always,issuer
+basicConstraints = critical, CA:true
+keyUsage = critical, digitalSignature, cRLSign, keyCertSign
+"
+
+OPENSSL_CNF_DOMAIN="
+$OPENSSL_CNF_MAIN
+
+[ server_cert ]
+basicConstraints = CA:FALSE
+nsCertType = server
+nsComment = 'OpenSSL Generated Server Certificate'
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid,issuer:always
+keyUsage = critical, digitalSignature, keyEncipherment
+extendedKeyUsage = serverAuth
+subjectAltName = \${ENV::subject_alt_name}
+"
+
+
 if [ -t 1 ]
 then
   IS_TTY=1
@@ -67,19 +131,17 @@ main() {
       usage
   esac
 
+  # Prepare the TMP area to look a bit like a working OpenSSL CA directory.
   TMP="$(mktemp -d -t cake-certificate-authority)"
   trap "rm -rf $TMP" EXIT
-
   (
     cd $TMP
     touch index.txt
     echo 1001 > serial
-    echo "$OPENSSL_CNF" > openssl.cnf
+    echo "$OPENSSL_CNF_MAIN"    > main.config
+    echo "$OPENSSL_CNF_DOMAIN"  > domain.config
   )
   
-  # TODO can I get away with not doing this?
-  export subject_alt_name='n/a'
-
   for candidate in "$1" cakefile Cakefile
   do
     if [ -f "$candidate" ]
@@ -247,7 +309,7 @@ build_ca() {
     (
       cd $TMP
       openssl req               \
-        -config openssl.cnf     \
+        -config main.config     \
         -key ca.key.pem         \
         -new                    \
         -x509                   \
@@ -296,8 +358,9 @@ build_domain() {
     (
       cd $TMP
       export subject_alt_name
+
       openssl req               \
-        -config openssl.cnf     \
+        -config domain.config   \
         -key $domain.key.pem    \
         -extensions server_cert \
         -subj "/CN=$domain"     \
@@ -306,7 +369,7 @@ build_domain() {
         -out $domain.csr.pem
 
       yes | openssl ca          \
-        -config openssl.cnf     \
+        -config domain.config   \
         -extensions server_cert \
         -notext                 \
         -md sha256              \
@@ -317,65 +380,6 @@ build_domain() {
     cp $TMP/$domain.cert.pem .
   fi
 }
-
-OPENSSL_CNF="
-[ ca ]
-default_ca = ca_HAZ
-
-[ ca_HAZ ]
-dir               = .
-new_certs_dir     = .
-database          = index.txt
-serial            = serial
-private_key       = ca.key.pem
-certificate       = ca.cert.pem
-default_md        = sha256
-name_opt          = ca_default
-cert_opt          = ca_default
-default_days      = 3650
-preserve          = no
-policy            = policy_loose
-
-[ policy_loose ]
-countryName             = optional
-stateOrProvinceName     = optional
-localityName            = optional
-organizationName        = optional
-organizationalUnitName  = optional
-commonName              = supplied
-emailAddress            = optional
-
-[ req ]
-distinguished_name  = req_distinguished_name
-string_mask         = utf8only
-default_md          = sha256
-x509_extensions     = v3_ca
-
-[ req_distinguished_name ]
-countryName                     = UK
-stateOrProvinceName             = State or Province Name
-localityName                    = Locality Name
-0.organizationName              = Organization Name
-organizationalUnitName          = Organizational Unit Name
-commonName                      = Common Name
-emailAddress                    = Email Address
-
-[ v3_ca ]
-subjectKeyIdentifier = hash
-authorityKeyIdentifier = keyid:always,issuer
-basicConstraints = critical, CA:true
-keyUsage = critical, digitalSignature, cRLSign, keyCertSign
-
-[ server_cert ]
-basicConstraints = CA:FALSE
-nsCertType = server
-nsComment = 'OpenSSL Generated Server Certificate'
-subjectKeyIdentifier = hash
-authorityKeyIdentifier = keyid,issuer:always
-keyUsage = critical, digitalSignature, keyEncipherment
-extendedKeyUsage = serverAuth
-subjectAltName = \${ENV::subject_alt_name}
-"
 
 set -e
 
