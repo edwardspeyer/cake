@@ -162,8 +162,8 @@ usage() {
 # Logging functions
 #
 
-# Defined as a global rather than in say() in because we pipe say() into other
-# things internally.
+# Defined as a global rather than in say() because we pipe say() into other
+# things, internally.
 IS_TTY=''
 if [ -t 1 ]
 then
