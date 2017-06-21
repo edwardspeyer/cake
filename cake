@@ -148,8 +148,8 @@ build_ca() {
 }
 
 build_domain() {
-  local domain="$1"
-  local subject_alt_name="$2"
+  local domain=$1
+  local subject_alt_name=$2
 
   if [ -f $domain.key.pem ]
   then
