@@ -16,18 +16,18 @@ Step 1: make a directory with a Cakefile:
 
   $ cat Cakefile
   size 1024
-  email root@example.com
 
-  ca /CN=Cake Example Certificate Authority
+  ca Cake Example Certificate Authority
+    email root@cake.com
 
-  domain www.example.com
+  domain www.cake.com
     size 4096
-    email webmaster@example.com
+    email webmaster@cake.com
 
-  domain mail.example.com
-    email mail...master?@example.com
-    alt imap.example.com
-    alt smtp.example.com
+  domain mail.cake.com
+    email postmaster@cake.com
+    alt imap.cake.com
+    alt smtp.cake.com
 
 
 Step 2: run cake, get lots of output:
