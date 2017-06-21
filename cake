@@ -99,6 +99,9 @@ basicConstraints        = critical, CA:true
 keyUsage                = critical, digitalSignature, cRLSign, keyCertSign
 "
 
+#
+# Additional config, required for making server certificates.
+#
 OPENSSL_CNF_DOMAIN="
 $OPENSSL_CNF_MAIN
 
@@ -113,12 +116,11 @@ extendedKeyUsage        = serverAuth
 subjectAltName          = \${ENV::subject_alt_name}
 "
 
-IS_TTY=''
-if [ -t 1 ]
-then
-  IS_TTY=1
-fi
-
+#
+# Main entry point: parse options into globals, set up a TMP that looks a bit
+# like a standard OpenSSL certificate authority directory, then parse a
+# cakefile.
+#
 main() {
   case "$*" in
     *-h*)
@@ -147,6 +149,7 @@ main() {
     fi
   done
 
+  # Only called if no candidate cakefile was found.
   usage
 }
 
@@ -155,6 +158,23 @@ usage() {
   exit 1
 }
 
+
+#
+# Logging functions
+#
+
+# Defined as a global rather than in say() in because we pipe say() into other
+# things internally.
+IS_TTY=''
+if [ -t 1 ]
+then
+  IS_TTY=1
+fi
+
+#
+# Print a message to stdout that stands out from other output.  OpenSSL is
+# verbose and it is hard to see what is going on.
+#
 say() {
   if [ "$IS_TTY" ]
   then
@@ -164,19 +184,16 @@ say() {
   fi
 }
 
+#
+# Log message to stdout and a log file.
+#
 log() {
-  say "$*" | tee >&2 -a $TMP/log
+  say "$*" | tee -a $TMP/log
 }
 
-warn() {
-  say "$*" >&2
-}
-
-fatal() {
-  warn "$*"
-  exit 1
-}
-
+#
+# Replay everything that was logged
+#
 summary() {
   if [ -f $TMP/log ]
   then
@@ -185,7 +202,27 @@ summary() {
   fi
 }
 
-prune_pair() {
+#
+# Log to stderr.
+#
+warn() {
+  say "$*" >&2
+}
+
+#
+# Warn then die.
+#
+fatal() {
+  warn "$*"
+  exit 1
+}
+
+#
+# For a given name, delete name.cert.pem if its corresponding name.key.pem is
+# either missing or newer (on the assumption that the key has been regenerated,
+# so the cert is now out of date.)
+#
+prune_cert() {
   local key=$1.key.pem
   local cert=$1.cert.pem
 
@@ -202,9 +239,14 @@ prune_pair() {
   fi
 }
 
-prune_domain() {
-  local domain=$1
-  for file in $domain.key.pem $domain.cert.pem
+#
+# For a given name, delete name.key.pem and name.cert.pem if they are older
+# than the CA cert or CA key (on the assumption that the CA is different to the
+# one which created this key/cert pair.)
+#
+prune_name() {
+  local name=$1
+  for file in $name.key.pem $name.cert.pem
   do
     if [ ! -f $file ]
     then
@@ -219,6 +261,9 @@ prune_domain() {
   done
 }
 
+#
+# Execute a cakefile line by line.
+#
 parse() {
   local cakefile="$1"
 
@@ -239,7 +284,7 @@ parse() {
           fi
           ;;
 
-        subject)
+        ca)
           build_ca "$args" "$key_size"
           ;;
 
@@ -280,7 +325,7 @@ build_ca() {
   local ca_subject="$1"
   local key_size="$2"
   
-  prune_pair ca
+  prune_cert ca
 
   if [ -f ca.key.pem ]
   then
@@ -322,8 +367,8 @@ build_domain() {
   local key_size=$2
   local alternates="$3"
 
-  prune_pair $domain
-  prune_domain $domain
+  prune_cert $domain
+  prune_name $domain
 
   subject_alt_name="DNS:$domain"
   for alternate in $alternates
