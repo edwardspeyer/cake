@@ -4,50 +4,35 @@
 #
 
 HELP="\
-usage: cake [options]
+usage: cake
 
-Options:
-  Just kidding!  No options!
+Write a Cakefile, then run cake:
 
-Step 1: make a directory with a Cakefile:
-
-  $ cat Cakefile
-  ca Cake Example Certificate Authority
+  £ cat Cakefile
+  ca Cake Corporation Internal CA
     email root@cake.com
 
   domain www.cake.com
-    size 1024
     email webmaster@cake.com
+    size 1024
 
-  domain mail.cake.com
+  domain mail.example.com
     email postmaster@cake.com
     alt imap.cake.com
     alt smtp.cake.com
 
-
-Step 2: run cake, get lots of output:
-
-  $ cake
-  [MUCH OUTPUT]
-  cake: summary:
-  cake: new CA key
-  cake: new CA cert
-  cake: new key for www.example.com
-  cake: new cert for www.example.com
-  cake: new key for mail.example.com
-  cake: new cert for mail.example.com
+  £ cake
+  [...]
   cake: all up to date!
 
-
-Warnings:
-  - Generated keys don't bother with passphrases!
-  - Only use cake on hardware you trust!
-  - Lots of output!
-  - No support for anything other than CN=<fqdn> with DNS: subjectAltNames!
-  - Who uses anything else?!
-  - LOTS OF OUTPUT!
-  - Not hard to use, it's piece of cake!
-
+  £ ls
+  Cakefile
+  ca.cert.pem
+  ca.key.pem
+  mail.cake.com.cert.pem
+  mail.cake.com.key.pem
+  www.cake.com.cert.pem
+  www.cake.com.key.pem
 "
 
 #
