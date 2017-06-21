@@ -7,25 +7,54 @@
 #
 
 HELP="\
-usage: cake <cakefile-path>
+usage: cake [options]
 
-Or run cake in a directory containing a Cakefile, where the Cakefile format is
-as follows:
+Options:
+  Just kidding!  No options!
 
-  /CN=Your Certificate Authority's Subject Name on the first line
-  # Followed by comments and groups of domains
-  a.example.com
-  # The first domain is the CN, all others are subjectAltNames
-  b.example.com alias.example.com
+Step 1: make a directory with a Cakefile:
 
-The current working directory will be popualated with (password-free!) keys and
-certificates.
+  # cat Cakefile
+  keysize 1024
+  subject /CN=Cake Example Certificate Authority
 
-Piece of cake!
+  domain www.example.com
+    keysize 2048
+
+  domain mail.example.com
+    keysize 1024
+    alt imap.example.com
+    alt smtp.example.com
+
+
+Step 2: run cake, get lots of output:
+
+  $ cake
+  🍰  new CA key
+  Generating RSA private key, 1024 bit long modulus
+  .++++++
+  ........................++++++
+  [MUCH OUTPUT]
+  🍰  recap:
+  🍰  new CA key
+  🍰  new CA cert
+  🍰  new key for www.example.com
+  🍰  new cert for www.example.com
+  🍰  new key for mail.example.com
+  🍰  new cert for mail.example.com
+  🍰  all up to date!
+
+
+Warnings:
+  - Generated keys don't bother with passphrases; use cake on hardware you
+    completely trust!
+  - Lots of output!
+  - No support for anything other than CN=<fqdn> with DNS: subjectAltNames!
+  - Who uses anything else?!
+  - LOTS OF OUTPUT!
+  - Not hard to use, it's piece of cake!
+
 "
-
-#KEY_SIZE=4096
-KEY_SIZE=1024
 
 if [ -t 1 ]
 then
@@ -41,14 +70,21 @@ main() {
   TMP="$(mktemp -d -t cake-certificate-authority)"
   trap "rm -rf $TMP" EXIT
 
-  BASE="$(pwd)"
+  (
+    cd $TMP
+    touch index.txt
+    echo 1001 > serial
+    echo "$OPENSSL_CNF" > openssl.cnf
+  )
+  
+  # TODO can I get away with not doing this?
+  export subject_alt_name='n/a'
+
   for candidate in "$1" cakefile Cakefile
   do
     if [ -f "$candidate" ]
     then
-      CONFIG="$BASE/$candidate"
-      prune
-      build
+      parse "$candidate"
       recap
       say "all up to date!"
       exit
@@ -76,18 +112,21 @@ log() {
   say "$*" | tee >&2 -a $TMP/log
 }
 
+warn() {
+  say "$*" >&2
+}
+
+fatal() {
+  warn "$*"
+  exit 1
+}
+
 recap() {
   if [ -f $TMP/log ]
   then
     say "recap:"
     cat $TMP/log
   fi
-}
-
-prune() {
-  prune_pair 'ca'
-  for_each_domain prune_pair
-  for_each_domain prune_domain
 }
 
 prune_pair() {
@@ -124,44 +163,69 @@ prune_domain() {
   done
 }
 
-build() {
-  (
-    cd $TMP
-    touch index.txt
-    echo 1001 > serial
-    echo "$OPENSSL_CNF" > openssl.cnf
-  )
+parse() {
+  local cakefile="$1"
 
-  # TODO can I get away with not doing this?
-  export subject_alt_name='n/a'
+  ca_subject=''
+  key_size=1024
+  domain=''
+  alternates=''
 
-  build_ca
-  for_each_domain build_domain
+  strip "$cakefile" | {
+    while read command args
+    do
+      case "$command" in
+        keysize)
+          keysize="$args"
+          if ! echo $keysize | egrep -q '(1024|2048|4096)'
+          then
+            fatal "weird key size: $keysize"
+          fi
+          ;;
+
+        subject)
+          build_ca "$args" "$key_size"
+          ;;
+
+        domain)
+          if [ "$domain" ]
+          then
+            build_domain $domain $keysize "$alternates"
+          fi
+          domain="$args"
+          ;;
+
+        alt)
+          alternates="$alternates $args"
+          ;;
+
+        *)
+          warn "unknown command $command"
+          ;;
+      esac
+    done
+
+    if [ "$domain" ]
+    then
+      build_domain $domain $keysize "$alternates"
+    fi
+  }
 }
 
-stripped_config() {
-  sed -e 's/ *#.*$//' $CONFIG | grep -v '^$'
+strip() {
+  sed -e 's/ *#.*$//' $1 | grep -v '^$'
 }
 
 ca_subject() {
   stripped_config | head -1
 }
 
-for_each_domain() {
-  stripped_config | tail -n +2 |
-    while read domain alternates
-    do
-      subject_alt_name="DNS:$domain"
-      for alternate in $alternates
-      do
-        subject_alt_name="${subject_alt_name},DNS:$alternate"
-      done
-
-      "$1" $domain $subject_alt_name
-    done
-}
-
 build_ca() {
+  local ca_subject="$1"
+  local key_size="$2"
+  
+  prune_pair ca
+
   if [ -f ca.key.pem ]
   then
     cp ca.key.pem $TMP
@@ -169,10 +233,10 @@ build_ca() {
     log "new CA key"
     (
       cd $TMP
-      openssl genrsa -out ca.key.pem $KEY_SIZE
+      openssl genrsa -out ca.key.pem $key_size
       chmod 0600 ca.key.pem
-      cp ca.key.pem $BASE
     )
+    cp $TMP/ca.key.pem .
   fi
 
   if [ -f ca.cert.pem ]
@@ -190,16 +254,26 @@ build_ca() {
         -days 7300              \
         -sha256                 \
         -extensions v3_ca       \
-        -subj "$(ca_subject)"   \
+        -subj "$ca_subject"     \
         -out ca.cert.pem
-      cp ca.cert.pem $BASE
     )
+    cp $TMP/ca.cert.pem .
   fi
 }
 
 build_domain() {
   local domain=$1
-  local subject_alt_name=$2
+  local keysize=$2
+  local alternates="$3"
+
+  prune_pair $domain
+  prune_domain $domain
+
+  subject_alt_name="DNS:$domain"
+  for alternate in $alternates
+  do
+    subject_alt_name="$subject_alt_name,DNS:$alternate"
+  done
 
   if [ -f $domain.key.pem ]
   then
@@ -208,10 +282,10 @@ build_domain() {
     log "new key for $domain"
     (
       cd $TMP
-      openssl genrsa -out $domain.key.pem $KEY_SIZE
+      openssl genrsa -out $domain.key.pem $keysize
       chmod 0600 $domain.key.pem
-      cp $domain.key.pem $BASE
     )
+    cp $TMP/$domain.key.pem .
   fi
 
   if [ -f $domain.cert.pem ]
@@ -242,8 +316,8 @@ build_domain() {
         -in $domain.csr.pem     \
         -out $domain.cert.pem
 
-      cp $domain.cert.pem $BASE
     )
+    cp $TMP/$domain.cert.pem .
   fi
 }
 
@@ -275,7 +349,6 @@ commonName              = supplied
 emailAddress            = optional
 
 [ req ]
-default_bits        = $KEY_SIZE
 distinguished_name  = req_distinguished_name
 string_mask         = utf8only
 default_md          = sha256
