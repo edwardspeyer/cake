@@ -14,7 +14,7 @@ Options:
 
 Step 1: make a directory with a Cakefile:
 
-  # cat Cakefile
+  $ cat Cakefile
   size 1024
   subject /CN=Cake Example Certificate Authority
 
