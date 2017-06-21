@@ -3,6 +3,11 @@
 Write a _Cakefile_ describing your CA and the certificates you need, then build everything with _cake_:
 
 ```
+£ ls
+Cakefile
+```
+
+```
 £ cat Cakefile
 ca Cake Corporation Internal CA
   email root@cake.com
