@@ -27,12 +27,20 @@ Piece of cake!
 #KEY_SIZE=4096
 KEY_SIZE=1024
 
+if [ -t 1 ]
+then
+  IS_TTY=1
+fi
+
 main() {
   case "$*" in
     *-h*)
       usage
   esac
-  
+
+  TMP="$(mktemp -d -t cake-certificate-authority)"
+  trap "rm -rf $TMP" EXIT
+
   BASE="$(pwd)"
   for candidate in "$1" cakefile Cakefile
   do
@@ -41,6 +49,8 @@ main() {
       CONFIG="$BASE/$candidate"
       prune
       build
+      recap
+      say "all up to date!"
       exit
     fi
   done
@@ -53,8 +63,25 @@ usage() {
   exit 1
 }
 
+say() {
+  if [ "$IS_TTY" ]
+  then
+    echo "🍰  $*"
+  else
+    echo "cake: $*"
+  fi
+}
+
 log() {
-  echo -e >&2 "\033[4m$(basename "$0"): $*\033[0m"
+  say "$*" | tee >&2 -a $TMP/log
+}
+
+recap() {
+  if [ -f $TMP/log ]
+  then
+    say "recap:"
+    cat $TMP/log
+  fi
 }
 
 prune() {
@@ -98,11 +125,8 @@ prune_domain() {
 }
 
 build() {
-  CA_TMP="$(mktemp -d -t cake-certificate-authority)"
-  trap "rm -rf $CA_TMP" EXIT
-
   (
-    cd $CA_TMP
+    cd $TMP
     touch index.txt
     echo 1001 > serial
     echo "$OPENSSL_CNF" > openssl.cnf
@@ -140,11 +164,11 @@ for_each_domain() {
 build_ca() {
   if [ -f ca.key.pem ]
   then
-    cp ca.key.pem $CA_TMP
+    cp ca.key.pem $TMP
   else
     log "new CA key"
     (
-      cd $CA_TMP
+      cd $TMP
       openssl genrsa -out ca.key.pem $KEY_SIZE
       chmod 0600 ca.key.pem
       cp ca.key.pem $BASE
@@ -153,11 +177,11 @@ build_ca() {
 
   if [ -f ca.cert.pem ]
   then
-    cp ca.cert.pem $CA_TMP
+    cp ca.cert.pem $TMP
   else
     log "new CA cert"
     (
-      cd $CA_TMP
+      cd $TMP
       openssl req               \
         -config openssl.cnf     \
         -key ca.key.pem         \
@@ -179,11 +203,11 @@ build_domain() {
 
   if [ -f $domain.key.pem ]
   then
-    cp $domain.key.pem $CA_TMP/
+    cp $domain.key.pem $TMP/
   else
     log "new key for $domain"
     (
-      cd $CA_TMP
+      cd $TMP
       openssl genrsa -out $domain.key.pem $KEY_SIZE
       chmod 0600 $domain.key.pem
       cp $domain.key.pem $BASE
@@ -192,11 +216,11 @@ build_domain() {
 
   if [ -f $domain.cert.pem ]
   then
-    cp $domain.cert.pem $CA_TMP/
+    cp $domain.cert.pem $TMP/
   else
     log "new cert for $domain"
     (
-      cd $CA_TMP
+      cd $TMP
       export subject_alt_name
       openssl req               \
         -config openssl.cnf     \
