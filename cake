@@ -198,7 +198,7 @@ summary() {
 }
 
 #
-# Log to stderr.
+# Write to stderr.
 #
 warn() {
   say "$*" >&2
