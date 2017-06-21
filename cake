@@ -15,13 +15,11 @@ Options:
 Step 1: make a directory with a Cakefile:
 
   $ cat Cakefile
-  size 1024
-
   ca Cake Example Certificate Authority
     email root@cake.com
 
   domain www.cake.com
-    size 4096
+    size 1024
     email webmaster@cake.com
 
   domain mail.cake.com
