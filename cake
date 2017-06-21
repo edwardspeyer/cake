@@ -35,7 +35,7 @@ Step 2: run cake, get lots of output:
   .++++++
   ........................++++++
   [MUCH OUTPUT]
-  🍰  recap:
+  🍰  summary:
   🍰  new CA key
   🍰  new CA cert
   🍰  new key for www.example.com
@@ -147,7 +147,7 @@ main() {
     if [ -f "$candidate" ]
     then
       parse "$candidate"
-      recap
+      summary
       say "all up to date!"
       exit
     fi
@@ -183,10 +183,10 @@ fatal() {
   exit 1
 }
 
-recap() {
+summary() {
   if [ -f $TMP/log ]
   then
-    say "recap:"
+    say "summary:"
     cat $TMP/log
   fi
 }
