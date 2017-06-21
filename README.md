@@ -1,2 +1,2 @@
 # cake
-Overly simplistic certificate authority script
+Overly simplistic certificate authority.
