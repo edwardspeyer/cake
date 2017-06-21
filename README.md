@@ -63,7 +63,7 @@ www.cake.com.key.pem
 * Debian Administration's [guide][DA] to using Eric Young and Tim Hudson's
   original scripts (1996!) that ship with OpenSSL.  If it ain't broke, rewrite
   it.
-* Stack Excchange [answer][SE] on passing subjectAltName as an environment
+* Stack Exchange [answer][SE] on passing subjectAltName as an environment
   variable, instead of hard-coding in the config file.
 
 [JL]: https://jamielinux.com/docs/openssl-certificate-authority/
