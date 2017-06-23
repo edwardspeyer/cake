@@ -15,7 +15,7 @@ domain www.cake.com
   email webmaster@cake.com
   size 1024
 
-domain mail.example.com
+domain mail.cake.com
   email postmaster@cake.com
   alt imap.cake.com
   alt smtp.cake.com
