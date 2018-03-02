@@ -1,0 +1,14 @@
+# Run "cake" in this directory!
+
+size 1024
+email root@cake.example.com
+
+ca Cake Example Certificate Authority
+
+domain www.cake.example.com
+  size 4096
+  email webmaster@cake.example.com
+
+domain mail.cake.example.com
+  alt imap.cake.example.com
+  alt smtp.cake.example.com
