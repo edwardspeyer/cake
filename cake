@@ -106,7 +106,7 @@ main() {
   (
     cd $TMP
     touch index.txt
-    echo 1001 > serial
+    date +%s > serial
     echo "$OPENSSL_CNF_MAIN"    > main.config
     echo "$OPENSSL_CNF_DOMAIN"  > domain.config
   )
